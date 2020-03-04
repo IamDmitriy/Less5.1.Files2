@@ -6,7 +6,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.os.Environment;
-import android.util.Log;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -15,7 +14,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.Scanner;
 
 public class MainActivity extends AppCompatActivity {
     public static final int REQUEST_CODE_PERMISSION_WRITE_STORAGE = 10;
@@ -51,8 +57,11 @@ public class MainActivity extends AppCompatActivity {
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     REQUEST_CODE_PERMISSION_CAMERA);
 
-            loadImage();
         }
+
+        saveTextFile();
+
+
 
     }
 
@@ -77,41 +86,78 @@ public class MainActivity extends AppCompatActivity {
     //Проверки на доступность хранилищ
     public boolean isExternalStorageWritable() {
         String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state)) {
-            return true;
-        }
-        return false;
+        return Environment.MEDIA_MOUNTED.equals(state);
     }
+
     /* Checks if external storage is available to at least read */
     public boolean isExternalStorageReadable() {
         String state = Environment.getExternalStorageState();
-        if (Environment.MEDIA_MOUNTED.equals(state) ||
-                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state)) {
-            return true;
-        }
-        return false;
+        return Environment.MEDIA_MOUNTED.equals(state) ||
+                Environment.MEDIA_MOUNTED_READ_ONLY.equals(state);
     }
 
-     public void loadImage() {
+    public void loadImage() {
         //Проверяем доступно ли файловое хранлище
-         if (isExternalStorageWritable()) {
+        if (isExternalStorageWritable()) {
 /*             File file = new File(Environment.getExternalStoragePublicDirectory(
                      Environment.DIRECTORY_DOWNLOADS), "1");*/
-             File file = getExternalFilesDir("/sdcard/Downloads/1");
+            File file = getExternalFilesDir("/sdcard/Downloads/1");
 
-             long x = file.length();
+            long x = file.length();
 
-             Bitmap bitmap = BitmapFactory.decodeFile(file.getAbsolutePath());
+            Bitmap bitmap = BitmapFactory.decodeFile(file.getPath()); //Почему то тут null всегда
 
-             imageView.setImageBitmap(bitmap);
+            imageView.setImageBitmap(bitmap);
 
-             //во внешнее личное
-             File logFile;
-         }
-     }
+        }
+    }
 
-     void showToast(String message) {
-         Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-     }
+    public void saveTextFile() {
+        //теперь про внешнее личное
+        File logFile = new File(getApplicationContext().getExternalFilesDir(null)
+                , "log.txt"); //TODO Почему не сразу getExter...? - работает и сразу
+
+        //Чтобы приложение на падало , если проблемы
+        FileWriter fileWriter = null;
+        FileReader fileReader = null;
+        try {
+            fileWriter = new FileWriter(logFile, true);
+            fileWriter.append("приложение запущено\n");
+
+
+            //TODO не корректно отражается - самый простой вариант - сканнер
+/*            fileReader = new FileReader(logFile);
+            Scanner scanner = new Scanner(fileReader);
+            String message = scanner.nextLine();
+*//*
+            BufferedReader br = new BufferedReader(fileReader);
+
+            String message = br.readLine();*//*
+
+            showToast(message);*/
+
+/*            FileInputStream inputStream = new FileInputStream(logFile);
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
+            StringBuilder stringBuilder = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null){
+                stringBuilder.append(line);
+            }
+            showToast(stringBuilder.toString());*/
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                fileWriter.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    void showToast(String message) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
 
 }
